@@ -51,3 +51,8 @@ jspm_packages/
 # mongodb
 data/
 mongodb-data/
+
+# env
+.env
+backend/.env
+
