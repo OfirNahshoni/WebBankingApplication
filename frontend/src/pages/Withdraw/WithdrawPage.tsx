@@ -1,0 +1,81 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, Button } from "antd";
+
+import AmountForm from "../../components/forms/AmountForm";
+import PillNav from "../../components/nav/PillNav";
+import { useAuth } from "../../app/providers/AuthProvider";
+import { updateBalance } from "../../lib/api";
+
+export default function WithdrawPage() {
+  const navigate = useNavigate();
+  const auth = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [formResetKey, setFormResetKey] = useState(0);
+
+  const handleSubmit = async (amountInput: number) => {
+    const amount = Number(amountInput);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert("Amount must be greater than 0");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await updateBalance(-Math.abs(amount));
+      alert("Withdraw successful");
+      setFormResetKey((value) => value + 1);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      alert(`Withdraw failed: ${message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0f1115" }}>
+      <PillNav
+        logo="../../src/assets/logo.jpg"
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Transfer", href: "/transfer" },
+          { label: "Withdraw", href: "/withdraw" },
+          { label: "Deposit", href: "/deposit" },
+        ]}
+        activeHref="/withdraw"
+        baseColor="#1677ff"
+        pillColor="#ffffff"
+        hoveredPillTextColor="#ffffff"
+        pillTextColor="#000000"
+        rightSlot={
+          <Button
+            type="primary"
+            onClick={() => {
+              auth?.logout?.();
+              navigate("/");
+            }}
+          >
+            Sign Out
+          </Button>
+        }
+      />
+
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px" }}>
+        <Card
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16 }}
+          bodyStyle={{ padding: 32 }}
+        >
+          <h2 style={{ color: "#ffffff", marginBottom: 24 }}>Withdraw Funds</h2>
+
+          <AmountForm
+            key={formResetKey}
+            buttonText={loading ? "Withdrawing..." : "Withdraw"}
+            onSubmit={handleSubmit}
+            loading={loading}
+          />
+        </Card>
+      </div>
+    </div>
+  );
+}

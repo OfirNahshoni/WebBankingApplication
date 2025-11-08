@@ -44,6 +44,23 @@ jspm_packages/
 .project
 .settings/
 
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# build artifacts & coverage
+coverage/
+*.lcov
+*.coverage*
+
+# package archives
+*.tgz
+
+# credentials & certificates
+*.pem
+*.key
+*.p12
+
 # database
 *.db
 *.db-journal
