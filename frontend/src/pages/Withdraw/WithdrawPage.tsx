@@ -1,25 +1,33 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Button, message } from "antd";
+import { Card, Button } from "antd";
 
 import AmountForm from "../../components/forms/AmountForm";
 import PillNav from "../../components/nav/PillNav";
 import { useAuth } from "../../app/providers/AuthProvider";
-import { withdraw } from "../../lib/api";
+import { updateBalance } from "../../lib/api";
 
 export default function WithdrawPage() {
   const navigate = useNavigate();
   const auth = useAuth();
   const [loading, setLoading] = useState(false);
+  const [formResetKey, setFormResetKey] = useState(0);
 
-  const handleSubmit = async (amount: number) => {
+  const handleSubmit = async (amountInput: number) => {
+    const amount = Number(amountInput);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert("Amount must be greater than 0");
+      return;
+    }
+
     setLoading(true);
     try {
-      await withdraw({ amount });
-      message.success("Withdrawal submitted successfully");
+      await updateBalance(-Math.abs(amount));
+      alert("Withdraw successful");
+      setFormResetKey((value) => value + 1);
     } catch (error) {
-      const description = error instanceof Error ? error.message : "Withdrawal failed. Please try again.";
-      message.error(description);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      alert(`Withdraw failed: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -60,7 +68,12 @@ export default function WithdrawPage() {
         >
           <h2 style={{ color: "#ffffff", marginBottom: 24 }}>Withdraw Funds</h2>
 
-          <AmountForm buttonText="Withdraw" onSubmit={handleSubmit} loading={loading} />
+          <AmountForm
+            key={formResetKey}
+            buttonText={loading ? "Withdrawing..." : "Withdraw"}
+            onSubmit={handleSubmit}
+            loading={loading}
+          />
         </Card>
       </div>
     </div>

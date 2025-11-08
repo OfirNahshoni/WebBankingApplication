@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Form, Input, InputNumber, Button, message } from "antd";
+import { Card, Form, Input, InputNumber, Button } from "antd";
 import { MailOutlined, DollarOutlined } from "@ant-design/icons";
 
 import PillNav from "../../components/nav/PillNav";
@@ -20,14 +20,27 @@ export default function TransferPage() {
   const [form] = Form.useForm<TransferFormValues>();
 
   const handleFinish = async (values: TransferFormValues) => {
+    const recipientEmail = values.to?.trim();
+    const amount = Number(values.amount);
+
+    if (!recipientEmail) {
+      alert("Please enter a recipient email");
+      return;
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert("Amount must be greater than 0");
+      return;
+    }
+
     setLoading(true);
     try {
-      await transfer(values);
-      message.success("Transfer submitted successfully");
+      await transfer({ recipientEmail, amount });
+      alert("Transfer successful");
       form.resetFields();
     } catch (error) {
-      const description = error instanceof Error ? error.message : "Transfer failed. Please try again.";
-      message.error(description);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      alert(`Transfer failed: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -113,8 +126,8 @@ export default function TransferPage() {
             </Form.Item>
 
             <Form.Item style={{ marginTop: 16 }}>
-              <Button type="primary" htmlType="submit" block size="large" loading={loading}>
-                Send
+              <Button type="primary" htmlType="submit" block size="large" loading={loading} disabled={loading}>
+                {loading ? "Sending..." : "Send"}
               </Button>
             </Form.Item>
           </Form>

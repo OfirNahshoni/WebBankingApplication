@@ -12,6 +12,7 @@ export type AuthContextValue = {
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  setAuthenticatedUser: (user: AuthUser | null) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -29,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = useCallback(async (email: string, password: string) => {
     const response = await loginRequest({ email, password });
     setToken(response.token);
-    setUser(response.user ?? { email });
+    setUser({ email: response.email });
   }, []);
 
   const logout = useCallback(() => {
@@ -37,7 +38,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   }, []);
 
-  const value = useMemo<AuthContextValue>(() => ({ user, login, logout }), [login, logout, user]);
+  const setAuthenticatedUser = useCallback((nextUser: AuthUser | null) => {
+    setUser(nextUser);
+  }, []);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({ user, login, logout, setAuthenticatedUser }),
+    [login, logout, setAuthenticatedUser, user]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

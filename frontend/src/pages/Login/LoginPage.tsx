@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Form, Input, Checkbox, Button, Card, message } from "antd";
+import { Form, Input, Checkbox, Button, Card } from "antd";
 import { MailOutlined, LockOutlined } from "@ant-design/icons";
 
 import TiltedCard from "../../components/bits/TiltedCard";
 import AuthSplit from "../../components/layout/AuthSplit";
 
 import { useAuth } from "../../app/providers";
+import { login as loginRequest } from "../../lib/api";
+import { setToken } from "../../lib/storage";
 
 type LoginFormValues = {
   email: string;
@@ -17,17 +19,19 @@ type LoginFormValues = {
 export default function LoginPage() {
   const [form] = Form.useForm<LoginFormValues>();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { setAuthenticatedUser } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleFinish = async ({ email, password }: LoginFormValues) => {
     setLoading(true);
     try {
-      await login(email, password);
+      const response = await loginRequest({ email, password });
+      setToken(response.token);
+      setAuthenticatedUser({ email: response.email });
       navigate("/dashboard");
     } catch (error) {
-      const description = error instanceof Error ? error.message : "Unable to login. Please try again.";
-      message.error(description);
+      const message = error instanceof Error ? error.message : "Login failed";
+      alert(message);
     } finally {
       setLoading(false);
     }

@@ -7,6 +7,7 @@ import DashboardPage from "../pages/Dashboard";
 import TransferPage from "../pages/Transfer";
 import WithdrawPage from "../pages/Withdraw";
 import DepositPage from "../pages/Deposit";
+import ActivatePage from "../pages/Auth/ActivatePage";
 import { getToken } from "../lib/storage";
 
 const RequireAuth: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -26,8 +27,16 @@ export const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
     path: "/signup",
     element: <SignupPage />,
+  },
+  {
+    path: "/auth/:pincode/:JWT",
+    element: <ActivatePage />,
   },
   {
     path: "/dashboard",

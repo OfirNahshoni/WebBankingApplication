@@ -1,126 +1,115 @@
 const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
 
-const API_BASE_URL = env.VITE_API_BASE_URL ?? "http://localhost:3000";
+export const BASE = env.VITE_API_URL ?? "http://localhost:3000/api/v1";
 
-function withJson(body: unknown): RequestInit {
-  return {
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body ?? {}),
+function authHeader(): HeadersInit {
+  const token = window.localStorage.getItem("auth_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const url = `${BASE}${path.startsWith("/") ? path : `/${path}`}`;
+  const headers: HeadersInit = {
+    Accept: "application/json",
+    ...(init.headers ?? {}),
   };
-}
 
-async function wait(ms = 300): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export type LoginPayload = {
-  email: string;
-  password: string;
-};
-
-export type LoginResponse = {
-  token: string;
-  user: { email: string; name?: string };
-};
-
-export async function login(payload: LoginPayload): Promise<LoginResponse> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      ...withJson(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error("Login request failed");
-    }
-
-    return (await response.json()) as LoginResponse;
-  } catch (error) {
-    console.warn("[api] login stub fallback", error);
-    await wait();
-    return { token: "demo-token", user: { email: payload.email } };
+  if (init.body !== undefined && !(headers as Record<string, string>)["Content-Type"]) {
+    (headers as Record<string, string>)["Content-Type"] = "application/json";
   }
-}
 
-export type SignupPayload = {
-  email: string;
-  password: string;
-  phone: string;
-};
+  const response = await fetch(url, { ...init, headers });
+  const text = await response.text();
+  const json = text ? (JSON.parse(text) as unknown) : undefined;
 
-export async function signup(payload: SignupPayload): Promise<void> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-      method: "POST",
-      ...withJson(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error("Signup request failed");
+  if (!response.ok) {
+    if (json && typeof json === "object" && "error" in json && typeof (json as { error: unknown }).error === "string") {
+      throw new Error((json as { error: string }).error);
     }
-  } catch (error) {
-    console.warn("[api] signup stub fallback", error);
-    await wait();
+    throw new Error(`Request failed with status ${response.status}`);
   }
+
+  if (json && typeof json === "object" && "error" in json && typeof (json as { error: unknown }).error === "string") {
+    throw new Error((json as { error: string }).error);
+  }
+
+  return json as T;
 }
 
-export type TransferPayload = {
-  to: string;
-  amount: number;
-};
+export type SignupBody = { email: string; password: string; phone: string };
+export type SignupResponse = { message: string };
 
-export async function transfer(payload: TransferPayload): Promise<void> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/transactions/transfer`, {
-      method: "POST",
-      ...withJson(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error("Transfer request failed");
-    }
-  } catch (error) {
-    console.warn("[api] transfer stub fallback", error);
-    await wait();
-  }
+export async function signup(body: SignupBody): Promise<SignupResponse> {
+  return request<SignupResponse>("/signup", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
-export type WithdrawPayload = {
-  amount: number;
-};
+export type ActivateResponse = { token: string };
 
-export async function withdraw(payload: WithdrawPayload): Promise<void> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/transactions/withdraw`, {
-      method: "POST",
-      ...withJson(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error("Withdraw request failed");
-    }
-  } catch (error) {
-    console.warn("[api] withdraw stub fallback", error);
-    await wait();
-  }
+export async function activate(pincode: string, jwt: string): Promise<ActivateResponse> {
+  return request<ActivateResponse>(`/auth/${encodeURIComponent(pincode)}/${encodeURIComponent(jwt)}`);
 }
 
-export type DepositPayload = {
-  amount: number;
-};
+export type LoginBody = { email: string; password: string };
+export type LoginResponse = { message: string; token: string; email: string };
 
-export async function deposit(payload: DepositPayload): Promise<void> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/transactions/deposit`, {
-      method: "POST",
-      ...withJson(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error("Deposit request failed");
-    }
-  } catch (error) {
-    console.warn("[api] deposit stub fallback", error);
-    await wait();
-  }
+export async function login(body: LoginBody): Promise<LoginResponse> {
+  return request<LoginResponse>("/login", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
+
+export type BalanceResponse = { balance: string };
+
+export async function getBalance(): Promise<BalanceResponse> {
+  return request<BalanceResponse>("/balance", {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+}
+
+export type UpdateBalanceResponse = { message: string; newBalance?: string };
+
+export async function updateBalance(amount: number): Promise<UpdateBalanceResponse> {
+  return request<UpdateBalanceResponse>("/update-balance", {
+    method: "POST",
+    headers: {
+      ...authHeader(),
+    },
+    body: JSON.stringify({ amount }),
+  });
+}
+
+export type TransferBody = { recipientEmail: string; amount: number };
+export type TransferResponse = { message: string };
+
+export async function transfer(body: TransferBody): Promise<TransferResponse> {
+  return request<TransferResponse>("/transactions", {
+    method: "POST",
+    headers: {
+      ...authHeader(),
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+export type WithdrawBody = { amount: number };
+export type WithdrawResponse = UpdateBalanceResponse;
+
+export async function withdraw(body: WithdrawBody): Promise<WithdrawResponse> {
+  return updateBalance(-Math.abs(body.amount));
+}
+
+export type DepositBody = { amount: number };
+export type DepositResponse = UpdateBalanceResponse;
+
+export async function deposit(body: DepositBody): Promise<DepositResponse> {
+  return updateBalance(Math.abs(body.amount));
+}
+
+export { request };

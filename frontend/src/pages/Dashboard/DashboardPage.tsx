@@ -1,9 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Table, Typography, Button } from "antd";
 
 import PillNav from "../../components/nav/PillNav";
 import { useAuth } from "../../app/providers/AuthProvider";
+import { getBalance } from "../../lib/api";
 
 interface TransactionRow {
   key: string;
@@ -13,9 +14,46 @@ interface TransactionRow {
   status: string;
 }
 
+function formatBalance(value?: string): string {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) {
+    return numeric.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+  return "0.00";
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const auth = useAuth();
+  const [balanceState, setBalanceState] = useState<{ loading: boolean; error: string | null; balance: string }>(
+    { loading: true, error: null, balance: "0.00" }
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchBalance() {
+      try {
+        const response = await getBalance();
+        if (cancelled) return;
+        setBalanceState({ loading: false, error: null, balance: formatBalance(response.balance) });
+      } catch (error) {
+        console.error("Failed to load balance", error);
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : "Unable to load balance";
+        setBalanceState((prev) => ({ ...prev, loading: false, error: message }));
+      }
+    }
+
+    fetchBalance();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const columns = useMemo(
     () => [
@@ -113,9 +151,14 @@ export default function DashboardPage() {
             Your balance
           </Typography.Text>
           <Typography.Title level={1} style={{ color: "#ffffff", marginTop: 12, marginBottom: 0 }}>
-            $5,000
+            ${balanceState.balance}
           </Typography.Title>
         </Card>
+        {balanceState.error && (
+          <Typography.Text style={{ color: "#ff7875", display: "block", marginBottom: 24 }}>
+            {balanceState.error}
+          </Typography.Text>
+        )}
 
         <Card
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
