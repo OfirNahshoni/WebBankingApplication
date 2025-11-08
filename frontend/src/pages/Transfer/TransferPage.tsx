@@ -4,7 +4,7 @@ import { Card, Form, Input, InputNumber, Button, message } from "antd";
 import { MailOutlined, DollarOutlined } from "@ant-design/icons";
 
 import PillNav from "../../components/nav/PillNav";
-import { useAuth } from "../../app/providers";
+import { useAuth } from "../../app/providers/AuthProvider";
 import { transfer } from "../../lib/api";
 
 interface TransferFormValues {
