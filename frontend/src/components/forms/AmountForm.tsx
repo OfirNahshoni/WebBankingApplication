@@ -50,7 +50,7 @@ export default function AmountForm({ buttonText, onSubmit, loading }: AmountForm
       </Form.Item>
 
       <Form.Item style={{ marginTop: 8 }}>
-        <Button type="primary" htmlType="submit" block loading={loading}>
+        <Button type="primary" htmlType="submit" block loading={loading} disabled={loading}>
           {buttonText}
         </Button>
       </Form.Item>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Form, Input, Button, Card, message } from "antd";
+import { Form, Input, Button, Card } from "antd";
 import { MailOutlined, LockOutlined, PhoneOutlined } from "@ant-design/icons";
 
 import TiltedCard from "../../components/bits/TiltedCard";
@@ -18,14 +18,15 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  const handleFinish = async (values: SignupFormValues) => {
+  const handleFinish = async ({ email, password, phone }: SignupFormValues) => {
     setLoading(true);
     try {
-      await signup(values);
-      navigate("/dashboard");
+      await signup({ email, password, phone });
+      alert("Check your mail and activate your account");
+      navigate("/", { replace: true });
     } catch (error) {
-      const description = error instanceof Error ? error.message : "Sign up failed. Please try again.";
-      message.error(description);
+      const message = error instanceof Error ? error.message : "Signup failed";
+      alert(message);
     } finally {
       setLoading(false);
     }
