@@ -4,7 +4,7 @@ import { Card, Button, message } from "antd";
 
 import AmountForm from "../../components/forms/AmountForm";
 import PillNav from "../../components/nav/PillNav";
-import { useAuth } from "../../app/providers/AuthProvider";
+import { useAuth } from "../../app/providers";
 import { deposit } from "../../lib/api";
 
 export default function DepositPage() {

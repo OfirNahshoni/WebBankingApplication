@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, Table, Typography, Button } from "antd";
 
 import PillNav from "../../components/nav/PillNav";
-import { useAuth } from "../../app/providers/AuthProvider";
+import { useAuth } from "../../app/providers";
 
 interface TransactionRow {
   key: string;

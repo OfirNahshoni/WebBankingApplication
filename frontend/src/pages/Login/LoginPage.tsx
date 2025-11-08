@@ -6,7 +6,7 @@ import { MailOutlined, LockOutlined } from "@ant-design/icons";
 import TiltedCard from "../../components/bits/TiltedCard";
 import AuthSplit from "../../components/layout/AuthSplit";
 
-import { useAuth } from "../../app/providers/AuthProvider";
+import { useAuth } from "../../app/providers";
 
 type LoginFormValues = {
   email: string;
