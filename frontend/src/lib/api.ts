@@ -1,5 +1,5 @@
 import { getToken } from "./storage";
-import type { Transaction } from "../types";
+import type { Transaction, TransactionListResponse, RawTransactionListResponse } from "../types";
 
 const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
 
@@ -147,41 +147,41 @@ export async function deposit(body: DepositBody): Promise<DepositResponse> {
   return updateBalance(Math.abs(body.amount));
 }
 
-export async function getTransactions(page: number, type: "in" | "out"): Promise<Transaction[]> {
-  type ApiTransaction = {
-    id: string;
-    amount: number;
-    otherMail: string;
-    date: string;
-  };
-
-  type ApiResponse = {
-    items?: ApiTransaction[];
-  };
-
+export async function getTransactions(page: number, type: "in" | "out"): Promise<TransactionListResponse> {
   const PAGE_SIZE = 5;
 
-  const response = await request<ApiResponse>("/transactions", {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(PAGE_SIZE),
+    type,
+  });
+
+  const raw = await request<RawTransactionListResponse>(`/transactions?${params.toString()}`, {
     method: "GET",
     headers: {
       ...authHeader(),
-      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ page, pageSize: PAGE_SIZE, type }),
   });
 
-  const items = Array.isArray(response.items) ? response.items : [];
-  const offset = (page - 1) * PAGE_SIZE;
-
-  return items.map((item, index) => ({
+  const items = Array.isArray(raw.items) ? raw.items : [];
+  const mappedItems: Transaction[] = items.map((item) => ({
     id: item.id,
     amount: Number(item.amount ?? 0),
-    from: type === "in" ? item.otherMail : "",
-    to: type === "out" ? item.otherMail : "",
+    from: type === "in" ? item.otherMail ?? "" : "",
+    to: type === "out" ? item.otherMail ?? "" : "",
     status: type,
     date: item.date,
-    row: offset + index + 1,
-  })) as Transaction[];
+    row: item.row ?? 0,
+  }));
+
+  return {
+    items: mappedItems,
+    total: raw.total ?? mappedItems.length,
+    totalPages: raw.totalPages ?? 1,
+    page: raw.page ?? page,
+    pageSize: raw.pageSize ?? PAGE_SIZE,
+    hasNextPage: Boolean(raw.hasNextPage),
+  };
 }
 
 export { request };
