@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { activate } from "../../lib/api";
+import { notifyError, notifySuccess } from "../../lib/notify";
 
 const ActivatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -10,18 +11,18 @@ const ActivatePage: React.FC = () => {
   useEffect(() => {
     async function runActivation() {
       if (!pincode || !JWT) {
-        alert("Activation link is invalid.");
+        notifyError("Activation failed", "Activation link is invalid.");
         navigate("/login", { replace: true });
         return;
       }
 
       try {
         await activate(pincode, JWT);
-        alert("Account was activated, now login to your account");
+        notifySuccess("Account activated", "You can now login in.");
         navigate("/login", { replace: true });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Activation failed";
-        alert(message);
+        notifyError("Activation failed", message);
         navigate("/login", { replace: true });
       }
     }

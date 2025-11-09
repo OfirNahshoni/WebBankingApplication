@@ -6,6 +6,7 @@ import AmountForm from "../../components/forms/AmountForm";
 import PillNav from "../../components/nav/PillNav";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { updateBalance } from "../../lib/api";
+import { notifyError, notifySuccess, notifyWarning } from "../../lib/notify";
 
 export default function WithdrawPage() {
   const navigate = useNavigate();
@@ -16,18 +17,18 @@ export default function WithdrawPage() {
   const handleSubmit = async (amountInput: number) => {
     const amount = Number(amountInput);
     if (!Number.isFinite(amount) || amount <= 0) {
-      alert("Amount must be greater than 0");
+      notifyWarning("Invalid amount", "Amount must be greater than 0.");
       return;
     }
 
     setLoading(true);
     try {
       await updateBalance(-Math.abs(amount));
-      alert("Withdraw successful");
+      notifySuccess("Withdraw successful", `Withdrew $${Math.abs(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`);
       setFormResetKey((value) => value + 1);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      alert(`Withdraw failed: ${message}`);
+      notifyError("Withdraw failed", message);
     } finally {
       setLoading(false);
     }

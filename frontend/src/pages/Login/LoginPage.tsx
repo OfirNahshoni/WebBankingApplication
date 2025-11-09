@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Form, Input, Checkbox, Button, Card } from "antd";
 import { MailOutlined, LockOutlined } from "@ant-design/icons";
 
@@ -9,6 +9,7 @@ import AuthSplit from "../../components/layout/AuthSplit";
 import { useAuth } from "../../app/providers";
 import { login as loginRequest } from "../../lib/api";
 import { setToken } from "../../lib/storage";
+import { notifyError, notifySuccess } from "../../lib/notify";
 
 type LoginFormValues = {
   email: string;
@@ -19,8 +20,23 @@ type LoginFormValues = {
 export default function LoginPage() {
   const [form] = Form.useForm<LoginFormValues>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activated = searchParams.get("activated");
+  const activationReason = searchParams.get("reason");
   const { setAuthenticatedUser } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!activated) return;
+
+    if (activated === "1") {
+      notifySuccess("Account activated", "You can now log in with your credentials.");
+    } else {
+      notifyError("Activation failed", activationReason ?? "Activation failed");
+    }
+
+    setSearchParams({}, { replace: true });
+  }, [activated, activationReason, setSearchParams]);
 
   const handleFinish = async ({ email, password }: LoginFormValues) => {
     setLoading(true);
@@ -28,10 +44,11 @@ export default function LoginPage() {
       const response = await loginRequest({ email, password });
       setToken(response.token);
       setAuthenticatedUser({ email: response.email });
+      notifySuccess("Welcome back", `Logged in as ${response.email}`);
       navigate("/dashboard");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed";
-      alert(message);
+      notifyError("Login failed", message);
     } finally {
       setLoading(false);
     }

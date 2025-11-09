@@ -1,9 +1,12 @@
+import { getToken } from "./storage";
+import type { Transaction } from "../types";
+
 const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
 
 export const BASE = env.VITE_API_URL ?? "http://localhost:3000/api/v1";
 
 function authHeader(): HeadersInit {
-  const token = window.localStorage.getItem("auth_token");
+  const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -14,11 +17,17 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...(init.headers ?? {}),
   };
 
+  const requestInit: RequestInit = {
+    cache: init.cache ?? "no-store",
+    ...init,
+    headers,
+  };
+
   if (init.body !== undefined && !(headers as Record<string, string>)["Content-Type"]) {
     (headers as Record<string, string>)["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(url, { ...init, headers });
+  const response = await fetch(url, requestInit);
   const text = await response.text();
   const json = text ? (JSON.parse(text) as unknown) : undefined;
 
@@ -110,6 +119,57 @@ export type DepositResponse = UpdateBalanceResponse;
 
 export async function deposit(body: DepositBody): Promise<DepositResponse> {
   return updateBalance(Math.abs(body.amount));
+}
+
+export async function getTransactions(currentUserEmail?: string): Promise<Transaction[]> {
+  const generateId = () => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  };
+
+  type ApiTransaction = {
+    id?: string;
+    _id?: string;
+    amount?: string | number;
+    type?: "in" | "out" | string;
+    counterpatryEmail?: string | null;
+    counterpartyEmail?: string | null;
+    createdAt?: string;
+    date?: string;
+  };
+
+  type ApiResponse = {
+    items?: ApiTransaction[];
+  };
+
+  const response = await request<ApiResponse>("/transactions/", {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+
+  const items = Array.isArray(response.items) ? response.items : [];
+  const normalized = items.map((item) => {
+    const direction = item.type === "in" ? "in" : "out";
+    const counterparty = item.counterpatryEmail ?? item.counterpartyEmail ?? "";
+    const amount = typeof item.amount === "string" ? Number(item.amount) : Number(item.amount ?? 0);
+    const fallbackEmail = currentUserEmail ?? "";
+    const timestamp = item.createdAt ?? item.date ?? new Date().toISOString();
+
+    return {
+      id: item.id ?? item._id ?? generateId(),
+      amount,
+      from: direction === "out" ? fallbackEmail : counterparty,
+      to: direction === "out" ? counterparty : fallbackEmail,
+      status: direction,
+      date: timestamp,
+    } as Transaction;
+  });
+
+  return normalized.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 export { request };

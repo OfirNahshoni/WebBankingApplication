@@ -1,18 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Table, Typography, Button } from "antd";
+import { Card, Typography, Button, Space, Table } from "antd";
+import type { ColumnsType, TablePaginationConfig, TableProps } from "antd/es/table";
 
 import PillNav from "../../components/nav/PillNav";
 import { useAuth } from "../../app/providers/AuthProvider";
-import { getBalance } from "../../lib/api";
+import { getBalance, getTransactions } from "../../lib/api";
+import type { Transaction } from "../../types";
+import { notifyError } from "../../lib/notify";
 
-interface TransactionRow {
-  key: string;
-  index: number;
-  amount: string;
-  to: string;
-  status: string;
-}
+const { Title, Text } = Typography;
 
 function formatBalance(value?: string): string {
   const numeric = Number(value);
@@ -27,10 +24,16 @@ function formatBalance(value?: string): string {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const auth = useAuth();
+  const { user, logout } = useAuth();
+  const currentEmail = user?.email ?? "";
+
   const [balanceState, setBalanceState] = useState<{ loading: boolean; error: string | null; balance: string }>(
     { loading: true, error: null, balance: "0.00" }
   );
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [txLoading, setTxLoading] = useState(false);
+  const [showIn, setShowIn] = useState(false);
+  const [pagination, setPagination] = useState<TablePaginationConfig>({ current: 1, pageSize: 5 });
 
   useEffect(() => {
     let cancelled = false;
@@ -43,8 +46,8 @@ export default function DashboardPage() {
       } catch (error) {
         console.error("Failed to load balance", error);
         if (cancelled) return;
-        const message = error instanceof Error ? error.message : "Unable to load balance";
-        setBalanceState((prev) => ({ ...prev, loading: false, error: message }));
+        const errMessage = error instanceof Error ? error.message : "Unable to load balance";
+        setBalanceState((prev) => ({ ...prev, loading: false, error: errMessage }));
       }
     }
 
@@ -55,59 +58,93 @@ export default function DashboardPage() {
     };
   }, []);
 
-  const columns = useMemo(
+  useEffect(() => {
+    let mounted = true;
+
+    const loadTransactions = async () => {
+      setTxLoading(true);
+      try {
+        const data = await getTransactions(currentEmail);
+        if (mounted) {
+          setTransactions(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        const errMessage = error instanceof Error ? error.message : "Failed to load transactions";
+        notifyError("Transactions error", errMessage);
+      } finally {
+        if (mounted) {
+          setTxLoading(false);
+        }
+      }
+    };
+
+    loadTransactions();
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentEmail]);
+
+  const outTransactions = useMemo(
+    () => transactions.filter((tx) => tx.status === "out"),
+    [transactions]
+  );
+
+  const inTransactions = useMemo(
+    () => transactions.filter((tx) => tx.status === "in"),
+    [transactions]
+  );
+
+  const baseColumns: ColumnsType<Transaction> = useMemo(
     () => [
       {
         title: "#",
-        dataIndex: "index",
-        key: "index",
+        key: "row",
         width: 80,
+        render: (_: unknown, __: Transaction, index: number) => {
+          const current = pagination.current ?? 1;
+          const pageSize = pagination.pageSize ?? 5;
+          return (current - 1) * pageSize + index + 1;
+        },
       },
       {
         title: "Amount",
         dataIndex: "amount",
         key: "amount",
+        render: (amt: number) => `$ ${Number(amt ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        sorter: (a, b) => (a.amount ?? 0) - (b.amount ?? 0),
       },
+      { title: "To", dataIndex: "to", key: "to" },
+      { title: "From", dataIndex: "from", key: "from" },
       {
-        title: "To",
-        dataIndex: "to",
-        key: "to",
-      },
-      {
-        title: "Status",
-        dataIndex: "status",
-        key: "status",
+        title: "Date",
+        dataIndex: "date",
+        key: "date",
+        render: (d: string) => (d ? new Date(d).toLocaleString() : "-"),
+        sorter: (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        defaultSortOrder: "descend",
       },
     ],
-    []
+    [pagination]
   );
 
-  const dataSource: TransactionRow[] = useMemo(
-    () => [
-      {
-        key: "1",
-        index: 1,
-        amount: "$1,250.00",
-        to: "Savings Account",
-        status: "Completed",
-      },
-      {
-        key: "2",
-        index: 2,
-        amount: "$540.00",
-        to: "Visa •• 3846",
-        status: "Pending",
-      },
-      {
-        key: "3",
-        index: 3,
-        amount: "$2,100.00",
-        to: "Investment Portfolio",
-        status: "Completed",
-      },
-    ],
-    []
-  );
+  const displayedColumns = useMemo(() => {
+    if (showIn) {
+      // Only show From column for incoming
+      return baseColumns.filter((column) => column.key !== "to");
+    }
+    // Only show To column for outgoing
+    return baseColumns.filter((column) => column.key !== "from");
+  }, [baseColumns, showIn]);
+
+  const dataSource = showIn ? inTransactions : outTransactions;
+
+  const handleTableChange: TableProps<Transaction>["onChange"] = (nextPagination) => {
+    setPagination({
+      current: nextPagination.current ?? 1,
+      pageSize: nextPagination.pageSize ?? (pagination.pageSize ?? 5),
+    });
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "#0f1115" }}>
@@ -127,7 +164,7 @@ export default function DashboardPage() {
           <Button
             type="primary"
             onClick={() => {
-              auth?.logout?.();
+              logout();
               navigate("/");
             }}
           >
@@ -147,33 +184,51 @@ export default function DashboardPage() {
           }}
           bodyStyle={{ padding: 32 }}
         >
-          <Typography.Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 16 }}>
-            Your balance
-          </Typography.Text>
-          <Typography.Title level={1} style={{ color: "#ffffff", marginTop: 12, marginBottom: 0 }}>
+          <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 16 }}>Your balance</Text>
+          <Title level={1} style={{ color: "#ffffff", marginTop: 12, marginBottom: 0 }}>
             ${balanceState.balance}
-          </Typography.Title>
+          </Title>
         </Card>
         {balanceState.error && (
-          <Typography.Text style={{ color: "#ff7875", display: "block", marginBottom: 24 }}>
+          <Text style={{ color: "#ff7875", display: "block", marginBottom: 24 }}>
             {balanceState.error}
-          </Typography.Text>
+          </Text>
         )}
 
         <Card
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
-          bodyStyle={{ padding: 24 }}
+          bordered={false}
+          style={{
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 12,
+          }}
         >
-          <Typography.Title level={4} style={{ color: "#ffffff", marginBottom: 16 }}>
-            Recent activity
-          </Typography.Title>
-          <Table<TransactionRow>
-            columns={columns}
+          <Space align="center" style={{ width: "100%", justifyContent: "space-between", marginBottom: 16 }}>
+            <Title level={3} style={{ margin: 0, color: "#ffffff" }}>
+              {showIn ? "In Transactions" : "Out Transactions"}
+            </Title>
+            <Button
+              type="primary"
+              onClick={() => {
+                setShowIn((prev) => !prev);
+                setPagination((prev) => ({ current: 1, pageSize: prev.pageSize ?? 5 }));
+              }}
+            >
+              {showIn ? "Out Transactions" : "In Transactions"}
+            </Button>
+          </Space>
+
+          <Table<Transaction>
+            rowKey="id"
+            columns={displayedColumns}
             dataSource={dataSource}
-            pagination={false}
-            bordered={false}
-            scroll={{ x: true }}
-            style={{ background: "transparent" }}
+            loading={txLoading}
+            pagination={{
+              ...pagination,
+              showSizeChanger: true,
+              pageSizeOptions: ["5", "10", "20"],
+            }}
+            onChange={handleTableChange}
           />
         </Card>
       </div>

@@ -6,6 +6,7 @@ import { MailOutlined, LockOutlined, PhoneOutlined } from "@ant-design/icons";
 import TiltedCard from "../../components/bits/TiltedCard";
 import AuthSplit from "../../components/layout/AuthSplit";
 import { signup } from "../../lib/api";
+import { notifyError, notifySuccess } from "../../lib/notify";
 
 interface SignupFormValues {
   email: string;
@@ -22,11 +23,11 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await signup({ email, password, phone });
-      alert("Check your mail and activate your account");
+      notifySuccess("Signup successful", "Check your mailbox to activate your account.");
       navigate("/", { replace: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Signup failed";
-      alert(message);
+      notifyError("Signup failed", message);
     } finally {
       setLoading(false);
     }

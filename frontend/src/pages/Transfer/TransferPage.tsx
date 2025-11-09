@@ -6,6 +6,7 @@ import { MailOutlined, DollarOutlined } from "@ant-design/icons";
 import PillNav from "../../components/nav/PillNav";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { transfer } from "../../lib/api";
+import { notifyError, notifySuccess, notifyWarning } from "../../lib/notify";
 
 interface TransferFormValues {
   to: string;
@@ -24,23 +25,27 @@ export default function TransferPage() {
     const amount = Number(values.amount);
 
     if (!recipientEmail) {
-      alert("Please enter a recipient email");
+      notifyWarning("Missing recipient", "Please enter a recipient email.");
       return;
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      alert("Amount must be greater than 0");
+      notifyWarning("Invalid amount", "Amount must be greater than 0.");
       return;
     }
 
     setLoading(true);
     try {
       await transfer({ recipientEmail, amount });
-      alert("Transfer successful");
+      notifySuccess(
+        "Transfer successful",
+        `Sent $${Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`
+      );
       form.resetFields();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      alert(`Transfer failed: ${message}`);
+      notifyError("Transfer failed", message);
+      throw error;
     } finally {
       setLoading(false);
     }
