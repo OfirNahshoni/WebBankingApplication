@@ -30,10 +30,12 @@ export default function DashboardPage() {
   const [balanceState, setBalanceState] = useState<{ loading: boolean; error: string | null; balance: string }>(
     { loading: true, error: null, balance: "0.00" }
   );
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [outTransactions, setOutTransactions] = useState<Transaction[]>([]);
+  const [inTransactions, setInTransactions] = useState<Transaction[]>([]);
   const [txLoading, setTxLoading] = useState(false);
   const [showIn, setShowIn] = useState(false);
-  const [pagination, setPagination] = useState<TablePaginationConfig>({ current: 1, pageSize: 5 });
+  const [outPagination, setOutPagination] = useState<TablePaginationConfig>({ current: 1, pageSize: 5, total: 0 });
+  const [inPagination, setInPagination] = useState<TablePaginationConfig>({ current: 1, pageSize: 5, total: 0 });
 
   // load balance
   useEffect(() => {
@@ -59,45 +61,81 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // load transactions
+  // load outgoing transactions (page changes or initial mount)
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
 
-    const loadTransactions = async () => {
+    const load = async () => {
       setTxLoading(true);
       try {
-        const current = pagination.current ?? 1;
-        const type = showIn ? "in" : "out";
-        const data = await getTransactions(current, type);
-        if (mounted) {
-          setTransactions(Array.isArray(data) ? data : []);
-        }
+        const currentPage = outPagination.current ?? 1;
+        const response = await getTransactions(currentPage, "out");
+        if (cancelled) return;
+        setOutTransactions(response.items ?? []);
+        setOutPagination({
+          current: response.page ?? currentPage,
+          pageSize: response.pageSize ?? 5,
+          total: response.total ?? 0,
+        });
       } catch (error) {
         const errMessage = error instanceof Error ? error.message : "Failed to load transactions";
         notifyError("Transactions error", errMessage);
       } finally {
-        if (mounted) {
+        if (!cancelled) {
           setTxLoading(false);
         }
       }
     };
 
-    loadTransactions();
+    if (!showIn || outTransactions.length === 0) {
+      load();
+    }
 
     return () => {
-      mounted = false;
+      cancelled = true;
     };
-  }, [showIn, pagination.current]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outPagination.current, showIn]);
 
-  const outTransactions = useMemo(
-    () => transactions.filter((tx) => tx.status === "out"),
-    [transactions]
-  );
+  // load incoming transactions when needed
+  useEffect(() => {
+    if (!showIn && inTransactions.length > 0) {
+      return;
+    }
 
-  const inTransactions = useMemo(
-    () => transactions.filter((tx) => tx.status === "in"),
-    [transactions]
-  );
+    let cancelled = false;
+
+    const load = async () => {
+      setTxLoading(true);
+      try {
+        const currentPage = inPagination.current ?? 1;
+        const response = await getTransactions(currentPage, "in");
+        if (cancelled) return;
+        setInTransactions(response.items ?? []);
+        setInPagination({
+          current: response.page ?? currentPage,
+          pageSize: response.pageSize ?? 5,
+          total: response.total ?? 0,
+        });
+      } catch (error) {
+        const errMessage = error instanceof Error ? error.message : "Failed to load transactions";
+        notifyError("Transactions error", errMessage);
+      } finally {
+        if (!cancelled) {
+          setTxLoading(false);
+        }
+      }
+    };
+
+    if (showIn) {
+      load();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inPagination.current, showIn]);
 
   const baseColumns: ColumnsType<Transaction> = useMemo(
     () => [
@@ -125,25 +163,27 @@ export default function DashboardPage() {
         defaultSortOrder: "descend",
       },
     ],
-    [pagination]
+    []
   );
 
   const displayedColumns = useMemo(() => {
     if (showIn) {
-      // Only show From column for incoming
       return baseColumns.filter((column) => column.key !== "to");
     }
-    // Only show To column for outgoing
+
     return baseColumns.filter((column) => column.key !== "from");
   }, [baseColumns, showIn]);
 
   const dataSource = showIn ? inTransactions : outTransactions;
 
   const handleTableChange: TableProps<Transaction>["onChange"] = (nextPagination) => {
-    setPagination({
-      current: nextPagination.current ?? 1,
-      pageSize: 5,
-    });
+    const nextPage = nextPagination.current ?? 1;
+
+    if (showIn) {
+      setInPagination((prev) => ({ ...prev, current: nextPage }));
+    } else {
+      setOutPagination((prev) => ({ ...prev, current: nextPage }));
+    }
   };
 
   return (
@@ -211,8 +251,6 @@ export default function DashboardPage() {
               type="primary"
               onClick={() => {
                 setShowIn((prev) => !prev);
-                setTransactions([]);
-                setPagination({ current: 1, pageSize: pagination.pageSize ?? 5 });
               }}
             >
               {showIn ? "Out Transactions" : "In Transactions"}
@@ -225,8 +263,10 @@ export default function DashboardPage() {
             dataSource={dataSource}
             loading={txLoading}
             pagination={{
-              current: pagination.current ?? 1,
+              current: showIn ? inPagination.current ?? 1 : outPagination.current ?? 1,
               pageSize: 5,
+              total: showIn ? inPagination.total ?? 0 : outPagination.total ?? 0,
+              showSizeChanger: false,
             }}
             onChange={handleTableChange}
           />
