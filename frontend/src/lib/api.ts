@@ -98,12 +98,25 @@ export type TransferBody = { recipientEmail: string; amount: number };
 export type TransferResponse = { message: string };
 
 export async function transfer(body: TransferBody): Promise<TransferResponse> {
+  const amount = Math.abs(body.amount);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Amount must be greater than 0");
+  }
+
+  const balanceResponse = await getBalance();
+  const currentBalance = Number(balanceResponse.balance ?? 0);
+  
+  if (amount > currentBalance) {
+    throw new Error("Insufficient balance for this transfer");
+  }
+
   return request<TransferResponse>("/transactions", {
     method: "POST",
     headers: {
       ...authHeader(),
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ ...body, amount }),
   });
 }
 
@@ -111,7 +124,20 @@ export type WithdrawBody = { amount: number };
 export type WithdrawResponse = UpdateBalanceResponse;
 
 export async function withdraw(body: WithdrawBody): Promise<WithdrawResponse> {
-  return updateBalance(-Math.abs(body.amount));
+  const amount = Math.abs(body.amount);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Amount must be greater than 0");
+  }
+
+  const balanceResponse = await getBalance();
+  const currentBalance = Number(balanceResponse.balance ?? 0);
+
+  if (amount > currentBalance) {
+    throw new Error("Insufficient balance to withdraw the requested amount");
+  }
+
+  return updateBalance(-amount);
 }
 
 export type DepositBody = { amount: number };
@@ -121,55 +147,41 @@ export async function deposit(body: DepositBody): Promise<DepositResponse> {
   return updateBalance(Math.abs(body.amount));
 }
 
-export async function getTransactions(currentUserEmail?: string): Promise<Transaction[]> {
-  const generateId = () => {
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-      return crypto.randomUUID();
-    }
-    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  };
-
+export async function getTransactions(page: number, type: "in" | "out"): Promise<Transaction[]> {
   type ApiTransaction = {
-    id?: string;
-    _id?: string;
-    amount?: string | number;
-    type?: "in" | "out" | string;
-    counterpatryEmail?: string | null;
-    counterpartyEmail?: string | null;
-    createdAt?: string;
-    date?: string;
+    id: string;
+    amount: number;
+    otherMail: string;
+    date: string;
   };
 
   type ApiResponse = {
     items?: ApiTransaction[];
   };
 
-  const response = await request<ApiResponse>("/transactions/", {
+  const PAGE_SIZE = 5;
+
+  const response = await request<ApiResponse>("/transactions", {
     method: "GET",
     headers: {
       ...authHeader(),
+      "Content-Type": "application/json",
     },
+    body: JSON.stringify({ page, pageSize: PAGE_SIZE, type }),
   });
 
   const items = Array.isArray(response.items) ? response.items : [];
-  const normalized = items.map((item) => {
-    const direction = item.type === "in" ? "in" : "out";
-    const counterparty = item.counterpatryEmail ?? item.counterpartyEmail ?? "";
-    const amount = typeof item.amount === "string" ? Number(item.amount) : Number(item.amount ?? 0);
-    const fallbackEmail = currentUserEmail ?? "";
-    const timestamp = item.createdAt ?? item.date ?? new Date().toISOString();
+  const offset = (page - 1) * PAGE_SIZE;
 
-    return {
-      id: item.id ?? item._id ?? generateId(),
-      amount,
-      from: direction === "out" ? fallbackEmail : counterparty,
-      to: direction === "out" ? counterparty : fallbackEmail,
-      status: direction,
-      date: timestamp,
-    } as Transaction;
-  });
-
-  return normalized.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  return items.map((item, index) => ({
+    id: item.id,
+    amount: Number(item.amount ?? 0),
+    from: type === "in" ? item.otherMail : "",
+    to: type === "out" ? item.otherMail : "",
+    status: type,
+    date: item.date,
+    row: offset + index + 1,
+  })) as Transaction[];
 }
 
 export { request };

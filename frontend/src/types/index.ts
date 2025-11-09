@@ -3,6 +3,7 @@ export interface Transaction {
   amount: number;
   from: string;
   to: string;
-  status: "approved" | "sent" | "rejected" | string;
+  status: "in" | "out" | string;
   date: string;
+  row: number;
 }

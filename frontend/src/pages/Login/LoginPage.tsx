@@ -43,8 +43,8 @@ export default function LoginPage() {
     try {
       const response = await loginRequest({ email, password });
       setToken(response.token);
-      setAuthenticatedUser({ email: response.email });
-      notifySuccess("Welcome back", `Logged in as ${response.email}`);
+      setAuthenticatedUser({ email });
+      notifySuccess("Login successful", `with the email - ${email}`);
       navigate("/dashboard");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed";

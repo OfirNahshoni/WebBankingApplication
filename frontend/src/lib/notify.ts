@@ -1,4 +1,5 @@
 import { notification } from "antd";
+import type { NotificationInstance } from "antd/es/notification/interface";
 
 const baseOptions = {
   placement: "top" as const,
@@ -6,18 +7,28 @@ const baseOptions = {
   duration: 3,
 };
 
+let notificationApi: NotificationInstance | null = null;
+
+export function registerNotificationApi(instance: NotificationInstance) {
+  notificationApi = instance;
+}
+
+function getApi(): NotificationInstance {
+  return notificationApi ?? notification;
+}
+
 export function notifySuccess(message: string, description?: string) {
-  notification.success({ ...baseOptions, message, description });
+  getApi().success({ ...baseOptions, message, description });
 }
 
 export function notifyError(message: string, description?: string) {
-  notification.error({ ...baseOptions, message, description, duration: 4 });
+  getApi().error({ ...baseOptions, message, description, duration: 4 });
 }
 
 export function notifyWarning(message: string, description?: string) {
-  notification.warning({ ...baseOptions, message, description });
+  getApi().warning({ ...baseOptions, message, description });
 }
 
 export function notifyInfo(message: string, description?: string) {
-  notification.info({ ...baseOptions, message, description });
+  getApi().info({ ...baseOptions, message, description });
 }

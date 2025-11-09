@@ -5,7 +5,7 @@ import { Card, Button } from "antd";
 import AmountForm from "../../components/forms/AmountForm";
 import PillNav from "../../components/nav/PillNav";
 import { useAuth } from "../../app/providers/AuthProvider";
-import { updateBalance } from "../../lib/api";
+import { withdraw } from "../../lib/api";
 import { notifyError, notifySuccess, notifyWarning } from "../../lib/notify";
 
 export default function WithdrawPage() {
@@ -23,8 +23,14 @@ export default function WithdrawPage() {
 
     setLoading(true);
     try {
-      await updateBalance(-Math.abs(amount));
-      notifySuccess("Withdraw successful", `Withdrew $${Math.abs(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`);
+      await withdraw({ amount });
+      notifySuccess(
+        "Withdraw successful",
+        `Withdrew $${Math.abs(amount).toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}.`
+      );
       setFormResetKey((value) => value + 1);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";

@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [showIn, setShowIn] = useState(false);
   const [pagination, setPagination] = useState<TablePaginationConfig>({ current: 1, pageSize: 5 });
 
+  // load balance
   useEffect(() => {
     let cancelled = false;
 
@@ -58,13 +59,16 @@ export default function DashboardPage() {
     };
   }, []);
 
+  // load transactions
   useEffect(() => {
     let mounted = true;
 
     const loadTransactions = async () => {
       setTxLoading(true);
       try {
-        const data = await getTransactions(currentEmail);
+        const current = pagination.current ?? 1;
+        const type = showIn ? "in" : "out";
+        const data = await getTransactions(current, type);
         if (mounted) {
           setTransactions(Array.isArray(data) ? data : []);
         }
@@ -83,7 +87,7 @@ export default function DashboardPage() {
     return () => {
       mounted = false;
     };
-  }, [currentEmail]);
+  }, [showIn, pagination.current]);
 
   const outTransactions = useMemo(
     () => transactions.filter((tx) => tx.status === "out"),
@@ -99,13 +103,9 @@ export default function DashboardPage() {
     () => [
       {
         title: "#",
+        dataIndex: "row",
         key: "row",
         width: 80,
-        render: (_: unknown, __: Transaction, index: number) => {
-          const current = pagination.current ?? 1;
-          const pageSize = pagination.pageSize ?? 5;
-          return (current - 1) * pageSize + index + 1;
-        },
       },
       {
         title: "Amount",
@@ -142,7 +142,7 @@ export default function DashboardPage() {
   const handleTableChange: TableProps<Transaction>["onChange"] = (nextPagination) => {
     setPagination({
       current: nextPagination.current ?? 1,
-      pageSize: nextPagination.pageSize ?? (pagination.pageSize ?? 5),
+      pageSize: 5,
     });
   };
 
@@ -157,9 +157,9 @@ export default function DashboardPage() {
           { label: "Deposit", href: "/deposit" },
         ]}
         baseColor="#1677ff"
-        pillColor="#ffffff"
+        pillColor="#cfdfff"
         hoveredPillTextColor="#ffffff"
-        pillTextColor="#000000"
+        pillTextColor="#000022"
         rightSlot={
           <Button
             type="primary"
@@ -211,7 +211,8 @@ export default function DashboardPage() {
               type="primary"
               onClick={() => {
                 setShowIn((prev) => !prev);
-                setPagination((prev) => ({ current: 1, pageSize: prev.pageSize ?? 5 }));
+                setTransactions([]);
+                setPagination({ current: 1, pageSize: pagination.pageSize ?? 5 });
               }}
             >
               {showIn ? "Out Transactions" : "In Transactions"}
@@ -224,9 +225,8 @@ export default function DashboardPage() {
             dataSource={dataSource}
             loading={txLoading}
             pagination={{
-              ...pagination,
-              showSizeChanger: true,
-              pageSizeOptions: ["5", "10", "20"],
+              current: pagination.current ?? 1,
+              pageSize: 5,
             }}
             onChange={handleTableChange}
           />
