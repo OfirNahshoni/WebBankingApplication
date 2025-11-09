@@ -1,9 +1,12 @@
+import { getToken } from "./storage";
+import type { Transaction } from "../types";
+
 const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
 
 export const BASE = env.VITE_API_URL ?? "http://localhost:3000/api/v1";
 
 function authHeader(): HeadersInit {
-  const token = window.localStorage.getItem("auth_token");
+  const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -14,11 +17,17 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...(init.headers ?? {}),
   };
 
+  const requestInit: RequestInit = {
+    cache: init.cache ?? "no-store",
+    ...init,
+    headers,
+  };
+
   if (init.body !== undefined && !(headers as Record<string, string>)["Content-Type"]) {
     (headers as Record<string, string>)["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(url, { ...init, headers });
+  const response = await fetch(url, requestInit);
   const text = await response.text();
   const json = text ? (JSON.parse(text) as unknown) : undefined;
 
@@ -89,12 +98,25 @@ export type TransferBody = { recipientEmail: string; amount: number };
 export type TransferResponse = { message: string };
 
 export async function transfer(body: TransferBody): Promise<TransferResponse> {
+  const amount = Math.abs(body.amount);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Amount must be greater than 0");
+  }
+
+  const balanceResponse = await getBalance();
+  const currentBalance = Number(balanceResponse.balance ?? 0);
+  
+  if (amount > currentBalance) {
+    throw new Error("Insufficient balance for this transfer");
+  }
+
   return request<TransferResponse>("/transactions", {
     method: "POST",
     headers: {
       ...authHeader(),
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ ...body, amount }),
   });
 }
 
@@ -102,7 +124,20 @@ export type WithdrawBody = { amount: number };
 export type WithdrawResponse = UpdateBalanceResponse;
 
 export async function withdraw(body: WithdrawBody): Promise<WithdrawResponse> {
-  return updateBalance(-Math.abs(body.amount));
+  const amount = Math.abs(body.amount);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Amount must be greater than 0");
+  }
+
+  const balanceResponse = await getBalance();
+  const currentBalance = Number(balanceResponse.balance ?? 0);
+
+  if (amount > currentBalance) {
+    throw new Error("Insufficient balance to withdraw the requested amount");
+  }
+
+  return updateBalance(-amount);
 }
 
 export type DepositBody = { amount: number };
@@ -110,6 +145,43 @@ export type DepositResponse = UpdateBalanceResponse;
 
 export async function deposit(body: DepositBody): Promise<DepositResponse> {
   return updateBalance(Math.abs(body.amount));
+}
+
+export async function getTransactions(page: number, type: "in" | "out"): Promise<Transaction[]> {
+  type ApiTransaction = {
+    id: string;
+    amount: number;
+    otherMail: string;
+    date: string;
+  };
+
+  type ApiResponse = {
+    items?: ApiTransaction[];
+  };
+
+  const PAGE_SIZE = 5;
+
+  const response = await request<ApiResponse>("/transactions", {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ page, pageSize: PAGE_SIZE, type }),
+  });
+
+  const items = Array.isArray(response.items) ? response.items : [];
+  const offset = (page - 1) * PAGE_SIZE;
+
+  return items.map((item, index) => ({
+    id: item.id,
+    amount: Number(item.amount ?? 0),
+    from: type === "in" ? item.otherMail : "",
+    to: type === "out" ? item.otherMail : "",
+    status: type,
+    date: item.date,
+    row: offset + index + 1,
+  })) as Transaction[];
 }
 
 export { request };

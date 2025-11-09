@@ -1,0 +1,32 @@
+.app-notification .ant-notification-notice-wrapper {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.app-notification .ant-notification-notice {
+  background: linear-gradient(135deg, #091836, #122a5b);
+  color: #f5f7ff;
+  box-shadow: 0 20px 40px rgba(9, 24, 54, 0.35);
+  border-radius: 18px;
+  padding: 16px 20px;
+}
+
+.app-notification .ant-notification-notice-message,
+.app-notification .ant-notification-notice-description {
+  color: #f5f7ff;
+}
+
+.app-notification .ant-notification-notice-close {
+  color: rgba(245, 247, 255, 0.75);
+  border-radius: 999px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.app-notification .ant-notification-notice-close:hover {
+  background: rgba(245, 247, 255, 0.18);
+  color: #ffffff;
+}
+
+.app-notification .ant-notification-notice-icon svg {
+  color: #7aa6ff;
+}
