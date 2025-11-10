@@ -108,11 +108,11 @@ export default function LoginPage() {
           />
         </Form.Item>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        {/* <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <Form.Item name="remember" valuePropName="checked" noStyle>
             <Checkbox style={{ color: "rgba(255,255,255,0.75)" }}>Remember me</Checkbox>
           </Form.Item>
-        </div>
+        </div> */}
 
         <Form.Item style={{ marginTop: 16 }}>
           <Button type="primary" htmlType="submit" block size="large" loading={loading}>
