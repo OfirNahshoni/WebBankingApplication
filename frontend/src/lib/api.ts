@@ -1,4 +1,4 @@
-import { getToken } from "./storage";
+import { getTokenCookie } from "./cookies";
 import type { Transaction, TransactionListResponse, RawTransactionListResponse } from "../types";
 
 const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
@@ -6,7 +6,7 @@ const env = (import.meta as ImportMeta & { env?: Record<string, string | undefin
 export const BASE = env.VITE_API_URL ?? "http://localhost:3000/api/v1";
 
 function authHeader(): HeadersInit {
-  const token = getToken();
+  const token = getTokenCookie();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 

@@ -8,7 +8,7 @@ import AuthSplit from "../../components/layout/AuthSplit";
 
 import { useAuth } from "../../app/providers";
 import { login as loginRequest } from "../../lib/api";
-import { setToken } from "../../lib/storage";
+import { setTokenCookie } from "../../lib/cookies";
 import { notifyError, notifySuccess } from "../../lib/notify";
 
 type LoginFormValues = {
@@ -42,7 +42,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const response = await loginRequest({ email, password });
-      setToken(response.token);
+      setTokenCookie(response.token);
       setAuthenticatedUser({ email });
       notifySuccess("Login successful", `with the email - ${email}`);
       navigate("/dashboard");

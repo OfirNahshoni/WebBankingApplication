@@ -33,7 +33,7 @@ export default function AuthSplit({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "24px",
+          padding: "20px",
           borderRight: "1px solid rgba(255,255,255,0.06)",
         }}
         className="authsplit-left"
@@ -47,7 +47,7 @@ export default function AuthSplit({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "24px",
+          padding: "20px",
         }}
         className="authsplit-right"
       >

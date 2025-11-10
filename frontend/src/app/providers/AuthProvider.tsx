@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { login as loginRequest } from "../../lib/api";
-import { clearToken, getToken, setToken } from "../../lib/storage";
+import { clearTokenCookie, getTokenCookie, setTokenCookie } from "../../lib/cookies";
 
 export type AuthUser = {
   email: string;
@@ -21,7 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
-    const token = getToken();
+    const token = getTokenCookie();
     if (token && !user) {
       setUser({ email: "session@user" });
     }
@@ -29,12 +29,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await loginRequest({ email, password });
-    setToken(response.token);
+    setTokenCookie(response.token);
     setUser({ email: response.email });
   }, []);
 
   const logout = useCallback(() => {
-    clearToken();
+    clearTokenCookie();
     setUser(null);
   }, []);
 
