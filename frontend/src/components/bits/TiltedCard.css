@@ -26,7 +26,7 @@
 
 .tilted-card-img {
     position: absolute; top: 0; left: 0; object-fit: cover;
-    border-radius: 15px; will-change: transform; transform: translateZ(0);
+    border-radius: 25px; will-change: transform; transform: translateZ(0);
 }
 
 .tilted-card-overlay { position: absolute; top: 0; left: 0; z-index: 2; transform: translateZ(30px); }
