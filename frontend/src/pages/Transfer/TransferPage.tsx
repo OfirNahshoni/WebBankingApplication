@@ -1,7 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Form, Input, InputNumber, Button } from "antd";
-import { MailOutlined, DollarOutlined } from "@ant-design/icons";
+import {
+  MailOutlined,
+  DollarOutlined,
+  DashboardOutlined,
+  SwapOutlined,
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  LogoutOutlined,
+} from "@ant-design/icons";
 
 import PillNav from "../../components/nav/PillNav";
 import { useAuth } from "../../app/providers/AuthProvider";
@@ -56,19 +64,31 @@ export default function TransferPage() {
       <PillNav
         logo="../../src/assets/logo.jpg"
         items={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Transfer", href: "/transfer" },
-          { label: "Withdraw", href: "/withdraw" },
-          { label: "Deposit", href: "/deposit" },
+          { label: "Dashboard", href: "/dashboard", icon: <DashboardOutlined /> },
+          { label: "Transfer", href: "/transfer", icon: <SwapOutlined /> },
+          { label: "Withdraw", href: "/withdraw", icon: <ArrowUpOutlined /> },
+          { label: "Deposit", href: "/deposit", icon: <ArrowDownOutlined /> },
         ]}
         activeHref="/transfer"
-        baseColor="#1677ff"
-        pillColor="#ffffff"
-        hoveredPillTextColor="#ffffff"
-        pillTextColor="#000000"
+        baseColor="#071a3d"
+        pillColor="rgba(11, 89, 233, 0.12)"
+        hoveredPillTextColor="#0b1937"
+        activePillTextColor="#0b1937"
         rightSlot={
           <Button
-            type="primary"
+            className="pill-nav-signout"
+            size="large"
+            ghost
+            icon={<LogoutOutlined />}
+            style={{
+              borderRadius: 9999,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.4)",
+              color: "#f6f8ff",
+              paddingInline: 24,
+              height: 48,
+              fontWeight: 600,
+            }}
             onClick={() => {
               auth?.logout?.();
               navigate("/");

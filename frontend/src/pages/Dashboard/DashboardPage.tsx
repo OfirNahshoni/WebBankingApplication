@@ -1,6 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Typography, Button, Space, Table } from "antd";
+import {
+  DashboardOutlined,
+  SwapOutlined,
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  LogoutOutlined,
+} from "@ant-design/icons";
 import type { ColumnsType, TablePaginationConfig, TableProps } from "antd/es/table";
 
 import PillNav from "../../components/nav/PillNav";
@@ -191,18 +198,30 @@ export default function DashboardPage() {
       <PillNav
         logo="../../src/assets/logo.jpg"
         items={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Transfer", href: "/transfer" },
-          { label: "Withdraw", href: "/withdraw" },
-          { label: "Deposit", href: "/deposit" },
+          { label: "Dashboard", href: "/dashboard", icon: <DashboardOutlined /> },
+          { label: "Transfer", href: "/transfer", icon: <SwapOutlined /> },
+          { label: "Withdraw", href: "/withdraw", icon: <ArrowUpOutlined /> },
+          { label: "Deposit", href: "/deposit", icon: <ArrowDownOutlined /> },
         ]}
-        baseColor="#1677ff"
-        pillColor="#cfdfff"
-        hoveredPillTextColor="#ffffff"
-        pillTextColor="#000022"
+        baseColor="#071a3d"
+        pillColor="rgba(11, 89, 233, 0.12)"
+        hoveredPillTextColor="#0b1937"
+        activePillTextColor="#0b1937"
         rightSlot={
           <Button
-            type="primary"
+            className="pill-nav-signout"
+            size="large"
+            ghost
+            icon={<LogoutOutlined />}
+            style={{
+              borderRadius: 9999,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.4)",
+              color: "#f6f8ff",
+              paddingInline: 24,
+              height: 48,
+              fontWeight: 600,
+            }}
             onClick={() => {
               logout();
               navigate("/");
@@ -222,9 +241,17 @@ export default function DashboardPage() {
             borderRadius: 18,
             boxShadow: "0 18px 38px rgba(0,0,0,0.22)",
           }}
-          bodyStyle={{ padding: 32 }}
+          bodyStyle={{
+            padding: 32,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            minHeight: 160,
+          }}
         >
-          <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 16 }}>Your balance</Text>
+          <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 30, fontWeight: 500 }}>Your balance</Text>
           <Title level={1} style={{ color: "#ffffff", marginTop: 12, marginBottom: 0 }}>
             ${balanceState.balance}
           </Title>
@@ -252,6 +279,7 @@ export default function DashboardPage() {
               onClick={() => {
                 setShowIn((prev) => !prev);
               }}
+              style={{ fontSize: 20, fontWeight: 650, height: 40, paddingInline: 24 }}
             >
               {showIn ? "Out Transactions" : "In Transactions"}
             </Button>
@@ -262,6 +290,7 @@ export default function DashboardPage() {
             columns={displayedColumns}
             dataSource={dataSource}
             loading={txLoading}
+            style={{ fontSize: 20 }}
             pagination={{
               current: showIn ? inPagination.current ?? 1 : outPagination.current ?? 1,
               pageSize: 5,

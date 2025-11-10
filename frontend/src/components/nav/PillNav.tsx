@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -6,7 +6,7 @@ import './PillNav.css';
 
 gsap.registerPlugin(useGSAP);
 
-export interface PillItem { label: string; href: string; ariaLabel?: string }
+export interface PillItem { label: string; href: string; ariaLabel?: string; icon?: React.ReactNode }
 
 export interface PillNavProps {
   logo: string;
@@ -19,6 +19,7 @@ export interface PillNavProps {
   pillColor?: string;
   hoveredPillTextColor?: string;
   pillTextColor?: string;
+  activePillTextColor?: string;
   onMobileMenuClick?: () => void;
   initialLoadAnimation?: boolean;
   rightSlot?: React.ReactNode; // Sign out button slot
@@ -35,6 +36,7 @@ const PillNav = ({
   pillColor = '#060010',
   hoveredPillTextColor = '#060010',
   pillTextColor,
+  activePillTextColor,
   onMobileMenuClick,
   initialLoadAnimation = true,
   rightSlot
@@ -42,7 +44,8 @@ const PillNav = ({
 }: PillNavProps) => {
   const { pathname } = useLocation();
   const resolvedActive = activeHref ?? pathname;
-  const resolvedPillTextColor = pillTextColor ?? baseColor;
+  const resolvedPillTextColor = pillTextColor ?? '#ffffff';
+  const resolvedActiveTextColor = activePillTextColor ?? '#060010';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const circleRefs = useRef<HTMLSpanElement[]>([]);
   const tlRefs = useRef<gsap.core.Timeline[]>([]);
@@ -164,12 +167,43 @@ const PillNav = ({
 
   const isRouterLink = (href: string) => href && !isExternalLink(href);
 
-  const cssVars = {
+  const cssVars = useMemo(() => ({
     ['--base' as any]: baseColor,
     ['--pill-bg' as any]: pillColor,
     ['--hover-text' as any]: hoveredPillTextColor,
-    ['--pill-text' as any]: resolvedPillTextColor
+    ['--pill-text' as any]: resolvedPillTextColor,
+    ['--pill-active-text' as any]: resolvedActiveTextColor,
+    ['--hamburger-color' as any]: '#123aaa'
+  }), [baseColor, hoveredPillTextColor, pillColor, resolvedActiveTextColor, resolvedPillTextColor]);
+
+  const renderWithIcon = (icon: React.ReactNode, label: React.ReactNode) => (
+    <span className="pill-content">
+      {icon ? <span className="pill-icon" aria-hidden="true">{icon}</span> : null}
+      {label}
+    </span>
+  );
+
+  const renderRightSlotForMobile = () => {
+    if (!rightSlot) return null;
+
+    if (isValidElement(rightSlot)) {
+      const element = rightSlot as React.ReactElement<any>;
+      const existingClassName = (element.props?.className as string) ?? '';
+      const nextProps: Record<string, unknown> = {
+        className: `${existingClassName} mobile-menu-signout`.trim(),
+      };
+
+      if (element.props?.block === undefined) {
+        nextProps.block = true;
+      }
+
+      return cloneElement(element, nextProps);
+    }
+
+    return rightSlot;
   };
+
+  const mobileSlotContent = renderRightSlotForMobile();
 
   return (
     <div className="pill-nav-container">
@@ -195,23 +229,29 @@ const PillNav = ({
                     aria-label={item.ariaLabel || item.label}
                     onMouseEnter={() => handleEnter(i)}
                     onMouseLeave={() => handleLeave(i)}
+                    tabIndex={0}
                   >
-
                     <span className="hover-circle" ref={(el) => { if (el) circleRefs.current[i] = el; }} />
 
+                    {renderWithIcon(
+                      item.icon,
                     <span className="label-stack">
                       <span className="pill-label">{item.label}</span>
                       <span className="pill-label-hover" aria-hidden="true">{item.label}</span>
                     </span>
+                    )}
                   </Link>
                 ) : (
                   <a role="menuitem" href={item.href} className={`pill${resolvedActive === item.href ? ' is-active' : ''}`}>
                     <span className="hover-circle" ref={(el) => { if (el) circleRefs.current[i] = el; }} />
 
+                    {renderWithIcon(
+                      item.icon,
                     <span className="label-stack">
                       <span className="pill-label">{item.label}</span>
                       <span className="pill-label-hover" aria-hidden="true">{item.label}</span>
                     </span>
+                    )}
                   </a>
                 )}
               </li>
@@ -219,10 +259,10 @@ const PillNav = ({
           </ul>
         </div>
 
-        <div className="desktop-only" style={{ marginLeft: 12 }}>{rightSlot}</div>
+        <div className="desktop-only pill-nav-actions" style={{ marginLeft: 12 }}>{rightSlot}</div>
 
         <button className="mobile-menu-button mobile-only" onClick={toggleMobileMenu} aria-label="Toggle menu" ref={hamburgerRef}>
-          <span className="hamburger-line" /><span className="hamburger-line" />
+          <span className="hamburger-line" /><span className="hamburger-line" /><span className="hamburger-line" />
         </button>
       </nav>
 
@@ -231,11 +271,16 @@ const PillNav = ({
           {items.map((item) => (
             <li key={`mobile-${item.href}`}>
               <Link to={item.href} className={`mobile-menu-link${resolvedActive === item.href ? ' is-active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
-                {item.label}
+                {renderWithIcon(item.icon, <span className="mobile-menu-label">{item.label}</span>)}
               </Link>
             </li>
           ))}
         </ul>
+        {mobileSlotContent ? (
+          <div className="mobile-menu-actions">
+            {mobileSlotContent}
+          </div>
+        ) : null}
       </div>
     </div>
   );
