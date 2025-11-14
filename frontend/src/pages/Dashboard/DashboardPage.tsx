@@ -194,7 +194,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0f1115" }}>
+    <div style={{ minHeight: "100vh", background: "#fafafa" }}>
       <PillNav
         logo="../../src/assets/logo.jpg"
         items={[
@@ -203,10 +203,11 @@ export default function DashboardPage() {
           { label: "Withdraw", href: "/withdraw", icon: <ArrowUpOutlined /> },
           { label: "Deposit", href: "/deposit", icon: <ArrowDownOutlined /> },
         ]}
-        baseColor="#071a3d"
-        pillColor="rgba(11, 89, 233, 0.12)"
-        hoveredPillTextColor="#0b1937"
-        activePillTextColor="#0b1937"
+        baseColor="#ffffff"
+        pillTextColor="#262626"
+        activePillTextColor="#1677ff"
+        pillColor="rgba(22, 119, 255, 0.1)"
+        hoveredPillTextColor="#1677ff"
         rightSlot={
           <Button
             className="pill-nav-signout"
@@ -216,8 +217,8 @@ export default function DashboardPage() {
             style={{
               borderRadius: 9999,
               borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.4)",
-              color: "#f6f8ff",
+              borderColor: "rgba(0,0,0,0.15)",
+              color: "#262626",
               paddingInline: 24,
               height: 48,
               fontWeight: 600,
@@ -236,10 +237,10 @@ export default function DashboardPage() {
         <Card
           style={{
             marginBottom: 24,
-            background: "linear-gradient(135deg, rgba(22,119,255,0.24), rgba(22,119,255,0.08))",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "linear-gradient(135deg, rgba(224, 231, 240, 0.84), rgba(238, 240, 243, 0.96))",
+            border: "1px solid rgba(248, 248, 248, 0.8)",
             borderRadius: 18,
-            boxShadow: "0 18px 38px rgba(0,0,0,0.22)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
           }}
           bodyStyle={{
             padding: 32,
@@ -251,8 +252,8 @@ export default function DashboardPage() {
             minHeight: 160,
           }}
         >
-          <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 30, fontWeight: 500 }}>Your balance</Text>
-          <Title level={1} style={{ color: "#ffffff", marginTop: 12, marginBottom: 0 }}>
+          <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 40, fontWeight: 600 }}>Your balance</Text>
+          <Title level={1} style={{ color: "#1677ff", marginTop: 12, marginBottom: 0 }}>
             ${balanceState.balance}
           </Title>
         </Card>
@@ -265,13 +266,14 @@ export default function DashboardPage() {
         <Card
           bordered={false}
           style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            background: "#ffffff",
+            border: "1px solid rgba(243, 236, 236, 0.7)",
             borderRadius: 12,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
           }}
         >
           <Space align="center" style={{ width: "100%", justifyContent: "space-between", marginBottom: 16 }}>
-            <Title level={3} style={{ margin: 0, color: "#ffffff" }}>
+            <Title level={3} style={{ margin: 0, color: "#262626" }}>
               {showIn ? "In Transactions" : "Out Transactions"}
             </Title>
             <Button

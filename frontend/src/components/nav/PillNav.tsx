@@ -38,7 +38,7 @@ const PillNav = ({
   pillTextColor,
   activePillTextColor,
   onMobileMenuClick,
-  initialLoadAnimation = true,
+  initialLoadAnimation = false,
   rightSlot
 
 }: PillNavProps) => {
@@ -106,23 +106,10 @@ const PillNav = ({
 
     if (menu) gsap.set(menu, { visibility: 'hidden', opacity: 0, scaleY: 1 });
 
-    if (initialLoadAnimation) {
-      const logoEl = logoRef.current;
-      const navItems = navItemsRef.current;
-
-      if (logoEl) {
-        gsap.set(logoEl, { scale: 0 });
-        gsap.to(logoEl, { scale: 1, duration: 0.6, ease });
-      }
-
-      if (navItems) {
-        gsap.set(navItems, { width: 0, overflow: 'hidden' });
-        gsap.to(navItems, { width: 'auto', duration: 0.6, ease });
-      }
-    }
+    // Removed initial load animation to prevent sliding effect
 
     return () => window.removeEventListener('resize', onResize);
-  }, [items, ease, initialLoadAnimation]);
+  }, [items, ease]);
 
   const handleEnter = (i: number) => {
     const tl = tlRefs.current[i];
@@ -227,8 +214,6 @@ const PillNav = ({
                     to={item.href}
                     className={`pill${resolvedActive === item.href ? ' is-active' : ''}`}
                     aria-label={item.ariaLabel || item.label}
-                    onMouseEnter={() => handleEnter(i)}
-                    onMouseLeave={() => handleLeave(i)}
                     tabIndex={0}
                   >
                     <span className="hover-circle" ref={(el) => { if (el) circleRefs.current[i] = el; }} />
