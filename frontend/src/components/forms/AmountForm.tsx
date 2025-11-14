@@ -22,7 +22,6 @@ export default function AmountForm({ buttonText, onSubmit, loading }: AmountForm
     <Form
       form={form}
       layout="vertical"
-      style={{ width: 420, maxWidth: "100%" }}
       onFinish={handleFinish}
       autoComplete="off"
     >

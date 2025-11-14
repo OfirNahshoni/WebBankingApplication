@@ -4,9 +4,9 @@
 }
 
 .app-notification .ant-notification-notice {
-  background: linear-gradient(135deg, #091836, #122a5b);
+  background: linear-gradient(135deg, #7ec906, #122a5b);
   color: #f5f7ff;
-  box-shadow: 0 20px 40px rgba(9, 24, 54, 0.35);
+  box-shadow: 0 20px 40px rgba(26, 241, 7, 0.795);
   border-radius: 18px;
   padding: 16px 20px;
 }
@@ -23,7 +23,7 @@
 }
 
 .app-notification .ant-notification-notice-close:hover {
-  background: rgba(245, 247, 255, 0.18);
+  background: rgba(49, 235, 3, 0.18);
   color: #ffffff;
 }
 

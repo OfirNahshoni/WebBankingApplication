@@ -42,7 +42,7 @@ export default function DepositPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0f1115" }}>
+    <div style={{ minHeight: "100vh", background: "#fafafa" }}>
       <PillNav
         logo="../../src/assets/logo.jpg"
         logoAlt="Logo"
@@ -53,10 +53,11 @@ export default function DepositPage() {
           { label: "Deposit", href: "/deposit", icon: <ArrowDownOutlined /> },
         ]}
         activeHref="/deposit"
-        baseColor="#071a3d"
-        pillColor="rgba(11, 89, 233, 0.12)"
-        hoveredPillTextColor="#0b1937"
-        activePillTextColor="#0b1937"
+        baseColor="#ffffff"
+        pillTextColor="#262626"
+        activePillTextColor="#1677ff"
+        pillColor="rgba(22, 119, 255, 0.1)"
+        hoveredPillTextColor="#1677ff"
         rightSlot={
           <Button
             className="pill-nav-signout"
@@ -66,8 +67,8 @@ export default function DepositPage() {
             style={{
               borderRadius: 9999,
               borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.4)",
-              color: "#f6f8ff",
+              borderColor: "rgba(0,0,0,0.15)",
+              color: "#262626",
               paddingInline: 24,
               height: 48,
               fontWeight: 600,
@@ -84,10 +85,10 @@ export default function DepositPage() {
 
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px" }}>
         <Card
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16 }}
+          style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
           bodyStyle={{ padding: 32 }}
         >
-          <h2 style={{ color: "#ffffff", marginBottom: 24 }}>Deposit Funds</h2>
+          <h2 style={{ color: "#262626", marginBottom: 24 }}>Deposit Funds</h2>
 
           <AmountForm
             key={formResetKey}

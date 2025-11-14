@@ -23,8 +23,8 @@ export default function AuthSplit({
         gridTemplateColumns: "1fr 1fr",
         gap: 0,
         background:
-          "radial-gradient(1200px 600px at 10% -10%, rgba(22,119,255,0.16), transparent 60%), #0f1115",
-        color: "#ffffff",
+          "radial-gradient(1200px 600px at 10% -10%, rgba(22,119,255,0.05), transparent 60%), #fafafa",
+        color: "#262626",
       }}
     >
       {/* LEFT column (visual) */}
@@ -34,7 +34,7 @@ export default function AuthSplit({
           alignItems: "center",
           justifyContent: "center",
           padding: "20px",
-          borderRight: "1px solid rgba(255,255,255,0.06)",
+          borderRight: "1px solid rgba(0,0,0,0.06)",
         }}
         className="authsplit-left"
       >
@@ -65,7 +65,7 @@ export default function AuthSplit({
           .authsplit-left {
             ${hideLeftOnMobile ? "display: none;" : "order: 2;"}
             border-right: none;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            border-top: 1px solid rgba(0,0,0,0.06);
           }
           .authsplit-right { order: 1; }
         }

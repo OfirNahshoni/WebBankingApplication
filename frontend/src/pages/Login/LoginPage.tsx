@@ -59,17 +59,16 @@ export default function LoginPage() {
       style={{
         width: 420,
         maxWidth: "100%",
-        background: "rgba(255,255,255,0.06)",
-        backdropFilter: "blur(6px)",
+        background: "#ffffff",
         borderRadius: 16,
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
+        border: "1px solid rgba(0,0,0,0.06)",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
       }}
       bodyStyle={{ padding: 28 }}
     >
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ color: "#ffffff", margin: 0, fontSize: 28 }}>Welcome back</h2>
-        <p style={{ color: "rgba(255,255,255,0.65)", marginTop: 8 }}>Login to enter to your account</p>
+        <h2 style={{ color: "#262626", margin: 0, fontSize: 28 }}>Welcome back</h2>
+        <p style={{ color: "rgba(0,0,0,0.65)", marginTop: 8 }}>Login to enter to your account</p>
       </div>
 
       <Form<LoginFormValues>
@@ -121,7 +120,7 @@ export default function LoginPage() {
         </Form.Item>
       </Form>
 
-      <div style={{ marginTop: 16, textAlign: "center", color: "rgba(255,255,255,0.7)" }}>
+      <div style={{ marginTop: 16, textAlign: "center", color: "rgba(0,0,0,0.65)" }}>
         <span>New here? </span>
         <Link to="/signup" style={{ color: "#1677ff" }}>
           Create an account
@@ -134,7 +133,7 @@ export default function LoginPage() {
     <AuthSplit
       leftSlot={
         <TiltedCard
-          imageSrc="../../src/assets/login-pic.jpg"
+          imageSrc="../../src/assets/bank-logo1.jpg"
           captionText="Bank Login"
           showMobileWarning={false}
         />
